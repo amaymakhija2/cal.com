@@ -70,6 +70,21 @@ export default class BaseEmail {
 
     const payload = await this.getNodeMailerPayload();
 
+    // Transform icalEvent to proper attachment to avoid duplicate ICS files
+    if (payload.icalEvent && typeof payload.icalEvent === 'object') {
+      const icsFile = payload.icalEvent as { filename: string; content: string; method: string };
+
+      payload.attachments = [
+        {
+          filename: icsFile.filename || 'event.ics',
+          content: icsFile.content,
+          contentType: `text/calendar; method=${icsFile.method}; charset=UTF-8`,
+        }
+      ];
+
+      delete payload.icalEvent; // Remove to prevent nodemailer's auto-handling
+    }
+
     const from = "from" in payload ? (payload.from as string) : "";
     const to = "to" in payload ? (payload.to as string) : "";
 

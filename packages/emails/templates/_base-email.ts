@@ -11,6 +11,26 @@ import { prisma } from "@calcom/prisma";
 
 import { sanitizeDisplayName } from "../lib/sanitizeDisplayName";
 
+// Simple global rate limiter for email sending
+class EmailRateLimiter {
+  private lastSentTime = 0;
+  private minInterval = 1000; // 1000ms = 1 email per second
+
+  async acquire() {
+    const now = Date.now();
+    const timeSinceLastSend = now - this.lastSentTime;
+
+    if (timeSinceLastSend < this.minInterval) {
+      const waitTime = this.minInterval - timeSinceLastSend;
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+
+    this.lastSentTime = Date.now();
+  }
+}
+
+const emailRateLimiter = new EmailRateLimiter();
+
 export default class BaseEmail {
   name = "";
 
@@ -71,6 +91,10 @@ export default class BaseEmail {
       },
       ...(parseSubject.success && { subject: decodeHTML(parseSubject.data) }),
     };
+
+    // Rate limit email sending to avoid provider limits (1 email per second)
+    await emailRateLimiter.acquire();
+
     const { createTransport } = await import("nodemailer");
     await new Promise((resolve, reject) =>
       createTransport(this.getMailerOptions().transport).sendMail(

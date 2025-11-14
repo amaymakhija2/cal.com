@@ -26,12 +26,16 @@ export function useTeamInvites() {
 }
 
 export function useHasTeamPlan() {
+  if (IS_SELF_HOSTED) return { isPending: false, hasTeamPlan: true };
+
   const { data: hasTeamPlan, isPending } = trpc.viewer.teams.hasTeamPlan.useQuery();
 
   return { isPending, hasTeamPlan: hasTeamPlan?.hasTeamPlan };
 }
 
 export function useHasEnterprisePlan() {
+  if (IS_SELF_HOSTED) return { isPending: false, hasTeamPlan: true };
+
   // TODO: figure out how to get "has Enterprise / has Org" from the backend
   const { data: hasTeamPlan, isPending } = trpc.viewer.teams.hasTeamPlan.useQuery();
 

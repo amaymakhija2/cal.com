@@ -1,4 +1,5 @@
 import { sendVerificationCode } from "@calcom/features/ee/workflows/lib/reminders/verifyPhoneNumber";
+import { IS_SELF_HOSTED } from "@calcom/lib/constants";
 import hasKeyInMetadata from "@calcom/lib/hasKeyInMetadata";
 import { CreditsRepository } from "@calcom/lib/server/repository/credits";
 import type { TrpcSessionUser } from "@calcom/trpc/server/types";
@@ -16,6 +17,12 @@ type SendVerificationCodeOptions = {
 };
 
 export const sendVerificationCodeHandler = async ({ ctx, input }: SendVerificationCodeOptions) => {
+  // Self-hosted instances bypass credit/plan checks for SMS verification
+  if (IS_SELF_HOSTED) {
+    const { phoneNumber } = input;
+    return sendVerificationCode(phoneNumber);
+  }
+
   const { user } = ctx;
 
   const isCurrentUsernamePremium =

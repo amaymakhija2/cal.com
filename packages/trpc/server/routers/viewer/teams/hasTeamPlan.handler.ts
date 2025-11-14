@@ -1,5 +1,6 @@
 import { BillingPlanService } from "@calcom/features/ee/billing/domain/billing-plans";
 import { MembershipRepository } from "@calcom/features/membership/repositories/MembershipRepository";
+import { IS_SELF_HOSTED } from "@calcom/lib/constants";
 import { prisma } from "@calcom/prisma";
 
 type HasTeamPlanOptions = {
@@ -9,6 +10,11 @@ type HasTeamPlanOptions = {
 };
 
 export const hasTeamPlanHandler = async ({ ctx }: HasTeamPlanOptions) => {
+  // Self-hosted instances bypass all team plan checks
+  if (IS_SELF_HOSTED) {
+    return { hasTeamPlan: true, plan: null };
+  }
+
   const userId = ctx.user.id;
 
   const membershipRepository = new MembershipRepository(prisma);
